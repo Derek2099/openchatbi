@@ -2,12 +2,11 @@ import functools
 import sys
 from typing import Any
 
-import pysqlite3 as sqlite3
+# Try to use pysqlite3 if available, otherwise use standard sqlite3
 
-# make sure langgraph sqlite connector uses pysqlite3
+import sqlite3
 sys.modules["sqlite3"] = sqlite3
-
-from langchain.tools import StructuredTool
+from langchain_core.tools import StructuredTool
 from langchain_core.language_models import BaseChatModel
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from langgraph.store.sqlite import SqliteStore

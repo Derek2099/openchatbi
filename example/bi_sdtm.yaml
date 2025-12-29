@@ -1,0 +1,175 @@
+# ============================================================
+# OpenChatBI SDTM 配置文件（模块化版本）
+# ============================================================
+# 用途: CDISC SDTM (Study Data Tabulation Model) 临床试验数据分析配置
+# 标准: CDISC SDTM Implementation Guide 3.4
+# 架构: 使用 domain_specific 目录下的独立 domain 文件
+# 
+# Domain 文件位置：
+#   - openchatbi/prompts/domain_specific/dm_domain.md (Demographics)
+#   - openchatbi/prompts/domain_specific/ae_domain.md (Adverse Events)
+#   - openchatbi/prompts/domain_specific/vs_domain.md (Vital Signs)
+#   - openchatbi/prompts/domain_specific/sdtm_glossary.md (完整术语表)
+#   - openchatbi/prompts/domain_specific/sdtm_domains.md (域架构)
+#   - openchatbi/prompts/domain_specific/sdtm_examples.md (查询示例)
+# ============================================================
+
+# 工具使用额外规则
+extra_tool_use_rule: |
+  - Try your best to give appropriate parameters when calling tools.
+
+  对于 SDTM（Study Data Tabulation Model）临床试验数据分析：
+  
+  1. 数据标准：遵循 CDISC SDTM IG 3.4 标准
+  2. 域关系：所有域通过 USUBJID（唯一受试者标识符）关联
+  3. 核心域：DM（Demographics）是主表，包含所有受试者基本信息
+  4. 专业术语：使用标准 SDTM 术语（如 USUBJID, AETERM, VSTESTCD）
+  
+  ⚠️ 重要参考：
+  - 每个 domain 的详细信息请参考 openchatbi/prompts/domain_specific/ 目录下的对应文件
+  - DM domain: dm_domain.md
+  - AE domain: ae_domain.md
+  - VS domain: vs_domain.md
+
+# ============================================================
+# 表选择规则
+# ============================================================
+# 概览规则（详细规则见各 domain 文件）
+
+table_selection_extra_rule: |
+  SDTM 表选择规则（概览）：
+  
+  1. DM（Demographics）域 - 人口统计学
+     关键字：受试者、治疗组、人口统计、基线特征、年龄、性别
+     主键：USUBJID
+     📄 详细信息：openchatbi/prompts/domain_specific/dm_domain.md
+  
+  2. AE（Adverse Events）域 - 不良事件
+     关键字：不良事件、AE、SAE、严重不良事件、安全性、耐受性
+     关联：通过 USUBJID 关联到 DM
+     重要变量：AESER='Y'（严重不良事件）
+     📄 详细信息：openchatbi/prompts/domain_specific/ae_domain.md
+  
+  3. VS（Vital Signs）域 - 生命体征
+     关键字：生命体征、血压、体重、体温、脉搏、身高
+     关联：通过 USUBJID 关联到 DM
+     重要变量：VSTESTCD（测试代码）、VSSTRESN（数值结果）
+     📄 详细信息：openchatbi/prompts/domain_specific/vs_domain.md
+  
+  4. 域关联原则
+     - DM 是核心表，包含所有受试者
+     - 其他域通过 USUBJID 与 DM 关联
+     - 需要治疗组信息时必须 JOIN DM 表
+  
+  📚 更多 domain 信息：openchatbi/prompts/domain_specific/sdtm_domains.md
+
+# ============================================================
+# Text2SQL 规则
+# ============================================================
+
+text2sql_extra_rule: |
+  SDTM SQL 生成规则：
+  
+  1. JOIN 语法
+     - 使用 INNER JOIN 当需要两表都有数据时
+     - 使用 LEFT JOIN 当需要保留主表所有记录时
+     - 关联条件：ON dm.USUBJID = ae.USUBJID
+  
+  2. 日期处理
+     - 所有日期使用 ISO 8601 格式（YYYY-MM-DD 或 YYYY-MM-DDTHH:MM:SS）
+     - 日期字段后缀：DTC（如 AESTDTC, RFSTDTC）
+  
+  3. 编码值（Codelist）
+     - AESER: 'Y'（严重不良事件）, 'N'（非严重）
+     - SEX: 'M'（男）, 'F'（女）
+     - AESEV: 'MILD'（轻度）, 'MODERATE'（中度）, 'SEVERE'（重度）
+  
+  4. 常用计算
+     - 发生率 = (发生人数 / 总人数) * 100
+     - 使用 COUNT(DISTINCT USUBJID) 计算受试者数
+     - 使用 COUNT(*) 计算事件数
+  
+  5. 分组和排序
+     - 按治疗组分组：GROUP BY dm.ARM
+     - 按访视排序：ORDER BY VISITNUM
+     - 按严重程度排序：使用 CASE 语句定义优先级
+  
+  📝 更多 SQL 示例：
+  - DM 查询示例：openchatbi/prompts/domain_specific/dm_domain.md（常见查询模式章节）
+  - AE 查询示例：openchatbi/prompts/domain_specific/ae_domain.md（常见查询模式章节）
+  - VS 查询示例：openchatbi/prompts/domain_specific/vs_domain.md（常见查询模式章节）
+  - 综合示例：openchatbi/prompts/domain_specific/sdtm_examples.md
+
+# ============================================================
+# 基础知识术语表
+# ============================================================
+# 使用 domain_specific 目录下的所有文档作为基础知识
+# 程序会自动加载并展开以下路径的所有 .md 文件内容
+
+basic_knowledge_glossary: |
+  openchatbi/prompts/domain_specific
+
+# ============================================================
+# 数据仓库介绍
+# ============================================================
+
+data_warehouse_introduction: |
+  SDTM 数据仓库架构
+  
+  数据模型：
+  本系统基于 CDISC SDTM IG 3.4 标准构建，采用标准化的临床试验数据结构。
+  
+  ═══════════════════════════════════════════════════════
+  核心域关系
+  ═══════════════════════════════════════════════════════
+  
+  1. DM（Demographics）- 受试者基本信息表 [主表]
+     特点：每个受试者一条记录
+     包含：USUBJID、年龄、性别、治疗组、研究日期等
+     作用：是其他所有域的关联基础
+     📄 详细文档：openchatbi/prompts/domain_specific/dm_domain.md
+  
+  2. AE（Adverse Events）- 不良事件表
+     特点：一个受试者可有多条 AE 记录
+     关联：通过 USUBJID 关联到 DM
+     关键字段：AESER（严重性）、AESEV（程度）、AETERM（术语）
+     📄 详细文档：openchatbi/prompts/domain_specific/ae_domain.md
+  
+  3. VS（Vital Signs）- 生命体征表
+     特点：长格式存储（每次测量一条记录）
+     关联：通过 USUBJID 关联到 DM
+     关键字段：VSTESTCD（测试代码）、VSSTRESN（数值结果）
+     📄 详细文档：openchatbi/prompts/domain_specific/vs_domain.md
+  
+  ═══════════════════════════════════════════════════════
+  关联原则
+  ═══════════════════════════════════════════════════════
+  
+  - 所有域通过 USUBJID（唯一受试者标识符）关联
+  - DM 是主表，包含所有受试者
+  - 分析时通常需要 JOIN DM 表获取治疗组信息
+  - 使用 LEFT JOIN 保留所有受试者，使用 INNER JOIN 仅保留有数据的受试者
+  
+  ═══════════════════════════════════════════════════════
+  查询模式示例
+  ═══════════════════════════════════════════════════════
+  
+  基础查询：
+    SELECT COUNT(DISTINCT USUBJID) FROM dm  -- 受试者总数
+  
+  跨域查询：
+    SELECT dm.ARM, COUNT(DISTINCT ae.USUBJID)
+    FROM dm LEFT JOIN ae ON dm.USUBJID = ae.USUBJID
+    WHERE ae.AESER = 'Y'
+    GROUP BY dm.ARM  -- 各治疗组 SAE 人数
+  
+  更多示例：
+    📝 openchatbi/prompts/domain_specific/sdtm_examples.md
+  
+  ═══════════════════════════════════════════════════════
+  参考文档
+  ═══════════════════════════════════════════════════════
+  
+  🏗️ 完整域架构：openchatbi/prompts/domain_specific/sdtm_domains.md
+  📊 各域详细说明：openchatbi/prompts/domain_specific/{dm,ae,vs}_domain.md
+  💡 查询最佳实践：openchatbi/prompts/domain_specific/sdtm_examples.md

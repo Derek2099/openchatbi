@@ -6,7 +6,7 @@ import pytest
 from sample_ui.plotly_utils import (
     create_empty_chart,
     create_plotly_chart,
-    visualization_dsl_to_gradio_plot,
+    visualization_dsl_to_plot,
 )
 
 
@@ -227,12 +227,12 @@ class TestErrorHandling:
         # Should create an empty chart with error message
 
 
-class TestVisualizationDslToGradioPlot:
+class TestVisualizationDslToPlot:
     """Tests for the main interface function."""
 
     def test_successful_conversion(self, sample_csv_data, sample_line_dsl):
-        """Test successful DSL to Gradio plot conversion."""
-        fig, description = visualization_dsl_to_gradio_plot(sample_csv_data, sample_line_dsl)
+        """Test successful DSL to plot conversion."""
+        fig, description = visualization_dsl_to_plot(sample_csv_data, sample_line_dsl)
 
         assert isinstance(fig, go.Figure)
         assert isinstance(description, str)
@@ -241,7 +241,7 @@ class TestVisualizationDslToGradioPlot:
 
     def test_empty_dsl(self, sample_csv_data):
         """Test conversion with empty DSL."""
-        fig, description = visualization_dsl_to_gradio_plot(sample_csv_data, {})
+        fig, description = visualization_dsl_to_plot(sample_csv_data, {})
 
         assert isinstance(fig, go.Figure)
         assert isinstance(description, str)
@@ -249,7 +249,7 @@ class TestVisualizationDslToGradioPlot:
 
     def test_no_data(self, sample_line_dsl):
         """Test conversion with no data."""
-        fig, description = visualization_dsl_to_gradio_plot("", sample_line_dsl)
+        fig, description = visualization_dsl_to_plot("", sample_line_dsl)
 
         assert isinstance(fig, go.Figure)
         assert isinstance(description, str)
@@ -311,7 +311,7 @@ class TestIntegrationScenarios:
             "layout": {"title": "Revenue Trend Over Time", "xaxis_title": "Date", "yaxis_title": "Revenue"},
         }
 
-        fig, description = visualization_dsl_to_gradio_plot(sample_time_series_data, line_dsl)
+        fig, description = visualization_dsl_to_plot(sample_time_series_data, line_dsl)
 
         assert isinstance(fig, go.Figure)
         assert "line" in description.lower()

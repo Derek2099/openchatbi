@@ -121,7 +121,7 @@ class VisualizationService:
             return ChartType.SCATTER
         elif len(numeric_cols) == 1 and len(categorical_cols) == 0:
             return ChartType.HISTOGRAM
-        elif row_count <= 20:  # Changed from 50 to 20
+        elif row_count <= 3:  # Only use table for very small datasets (changed from 20)
             return ChartType.TABLE
         else:
             return ChartType.BAR

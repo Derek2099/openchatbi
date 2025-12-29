@@ -6,11 +6,14 @@ import traceback
 import uuid
 from pathlib import Path
 
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import plotly.graph_objects as go
-import pysqlite3 as sqlite3
 import streamlit as st
 from langchain_core.messages import AIMessage
 
+import sqlite3
 sys.modules["sqlite3"] = sqlite3
 
 from langgraph.types import Command
@@ -20,7 +23,7 @@ from sample_ui.plotly_utils import visualization_dsl_to_gradio_plot
 from sample_ui.async_graph_manager import AsyncGraphManager
 
 # Configuration
-st.set_page_config(page_title="OpenChatBI - Streamlit Interface", page_icon="💬", layout="wide")
+st.set_page_config(page_title="OpenChatBI - RBQM Application", page_icon="💬", layout="wide")
 
 # Initialize session state
 if "messages" not in st.session_state:
@@ -75,7 +78,7 @@ async def process_user_message_stream(
     update_display()
 
     # Stream through the graph
-    async for _namespace, event_type, event_value in st.session_state.graph_manager.graph.astream(
+    async for namespace, event_type, event_value in st.session_state.graph_manager.graph.astream(
         stream_input, config=config, stream_mode=["updates", "messages"], subgraphs=True, debug=True
     ):
         if event_type == "messages":
@@ -123,7 +126,9 @@ async def process_user_message_stream(
 
             elif event_value.get("execute_sql"):
                 step_description = "⚡ Executing SQL query..."
-                data_csv = event_value["execute_sql"].get("data")
+                # Capture data from execute_sql event
+                if event_value["execute_sql"].get("data"):
+                    data_csv = event_value["execute_sql"].get("data")
 
             elif event_value.get("regenerate_sql"):
                 sql = event_value["regenerate_sql"].get("sql")
@@ -382,7 +387,7 @@ def display_message_with_thinking(
 
 
 # Main UI
-st.title("💬 OpenChatBI - Streamlit UI")
+st.title("💬 OpenChatBI - RBQM Application")
 st.markdown("*AI-powered Business Intelligence Chat with Thinking*")
 
 # Sidebar for configuration

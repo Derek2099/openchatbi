@@ -60,6 +60,25 @@ data_warehouse_config:
   user_name: TOKEN_SERVICE_USER_NAME
   password: TOKEN_SERVICE_PASSWORD
 
+# Local dataset configuration (optional)
+# Use this to read local CSV/Excel/Parquet files with pandas
+local_datasets:
+  enabled: false
+  datasets:
+    - name: "sales_data"
+      path: "./data/sales.csv"
+      description: "Sales transaction data"
+      file_type: "csv"  # csv, excel, parquet, json
+      options:  # Optional pandas read options
+        encoding: "utf-8"
+        sep: ","
+    - name: "customer_data"
+      path: "./data/customers.xlsx"
+      description: "Customer information"
+      file_type: "excel"
+      options:
+        sheet_name: "Sheet1"
+
 # LLM configurations
 default_llm:
   class: langchain_openai.ChatOpenAI

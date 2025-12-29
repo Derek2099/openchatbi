@@ -62,6 +62,9 @@ class Config(BaseModel):
     # Time Series Service Configuration
     timeseries_forecasting_service_url: str = "http://localhost:8765"
 
+    # Local Dataset Manager
+    local_dataset_manager: Any = None
+
     @classmethod
     def from_dict(cls, config: dict[str, Any]) -> "Config":
         """Creates a Config instance from a dictionary.
@@ -136,6 +139,18 @@ class ConfigLoader:
             raise ValueError(f"Invalid YAML in configuration file {config_file}: {e}")
         except Exception as e:
             raise RuntimeError(f"Failed to read configuration file {config_file}: {e}")
+        
+        if "proxy" in config_data:
+            proxy_config = config_data["proxy"]
+            if "http_proxy" in proxy_config:
+                os.environ["HTTP_PROXY"] = str(proxy_config["http_proxy"])
+                import httpx
+                self.http_client = httpx.Client(proxy=str(proxy_config["http_proxy"]))
+            if "https_proxy" in proxy_config:
+                os.environ["HTTPS_PROXY"] = str(proxy_config["https_proxy"])
+                import httpx
+                self.http_client = httpx.Client(proxy=str(proxy_config["https_proxy"]))
+
 
         self._process_config_dict(config_data)
         self._config = Config.from_dict(config_data)
@@ -174,6 +189,21 @@ class ConfigLoader:
             )
         config_data["catalog_store"] = catalog_store
 
+        # Load local datasets if configured
+        if "local_datasets" in config_data and config_data["local_datasets"].get("enabled", False):
+            try:
+                from openchatbi.local_dataset_loader import LocalDatasetManager
+
+                datasets_config = config_data["local_datasets"].get("datasets", [])
+                local_dataset_manager = LocalDatasetManager(datasets_config)
+                config_data["local_dataset_manager"] = local_dataset_manager
+                log(f"Loaded {len(datasets_config)} local dataset(s)")
+            except Exception as e:
+                log(f"Warning: Failed to load local datasets: {e}")
+                config_data["local_dataset_manager"] = None
+        else:
+            config_data["local_dataset_manager"] = None
+
         for config_key in self.llm_configs:
             if config_key not in config_data or "class" not in config_data[config_key]:
                 continue
@@ -185,6 +215,8 @@ class ConfigLoader:
                 module = importlib.import_module(module_name)
                 llm_cls = getattr(module, class_name)
                 params = config_data[config_key].get("params", {})
+                if self.http_client:
+                    params["http_client"] = self.http_client
                 config_data[config_key] = llm_cls(**params)
             except (ImportError, AttributeError, ValueError, TypeError) as e:
                 raise RuntimeError(
@@ -215,6 +247,11 @@ class ConfigLoader:
         try:
             with open(bi_config_file, encoding="utf-8") as file:
                 bi_config_data = yaml.safe_load(file) or {}
+                
+            # Expand domain_specific references in the loaded config
+            from openchatbi.prompts.system_prompt import expand_bi_config_domain_references
+            bi_config_data = expand_bi_config_domain_references(bi_config_data)
+            
         except FileNotFoundError:
             log(f"Warning: BI config file '{bi_config_file}' not found. Ignore load BI config from yaml file.")
         except yaml.YAMLError as e:

@@ -99,6 +99,9 @@ def create_sql_nodes(
         examples = []
         for relevant_document in relevant_questions:
             question = relevant_document.page_content
+            # Skip if question not in example dict (handle missing examples gracefully)
+            if question not in sql_example_dicts:
+                continue
             example_sql, used_tables = sql_example_dicts[question]
             if all(table in tables for table in used_tables):
                 examples.append(f"<example>\nQ: {question}\nA: {example_sql}\n</example>\n")
@@ -343,7 +346,8 @@ def create_sql_nodes(
                 viz_info = f"\n\n**Visualization Generated**: {viz_dsl.chart_type.title()} chart with {len(viz_dsl.data_columns)} column(s)"
                 messages[-1] = AIMessage(current_content + viz_info)
 
-            return {"visualization_dsl": viz_dsl.to_dict(), "messages": messages}
+            # Return both visualization_dsl and data so they're available in the event stream
+            return {"visualization_dsl": viz_dsl.to_dict(), "data": data, "messages": messages}
         except Exception as e:
             log(f"Visualization generation error: {str(e)}")
             return {"visualization_dsl": {"error": f"Failed to generate visualization: {str(e)}"}}

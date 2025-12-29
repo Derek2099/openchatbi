@@ -89,6 +89,9 @@ def schema_linking(llm: BaseChatModel, catalog: CatalogStore):
             question = question_doc.page_content
             if not question:
                 continue
+            # Skip if question not in example dict (handle missing examples gracefully)
+            if question not in table_selection_example_dict:
+                continue
             expected_tables = table_selection_example_dict[question]
             expected_tables = [table for table in expected_tables if table in candidate_tables]
             if expected_tables:

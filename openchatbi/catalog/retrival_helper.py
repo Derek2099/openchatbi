@@ -60,6 +60,14 @@ def build_columns_retriever(catalog):
     """
     columns, col_dict, column_tokens, embedding_keys = get_columns_metadata(catalog)
 
+    # Handle empty columns case to prevent division by zero in BM25
+    if not column_tokens or len(column_tokens) == 0:
+        log("Warning: No columns found in catalog. Creating empty retrievers.")
+        # Create a dummy BM25 with a single empty document to avoid division by zero
+        bm25 = BM25Okapi([[""]])
+        vector_db = None
+        return bm25, vector_db, columns, col_dict
+
     bm25 = BM25Okapi(column_tokens)
 
     log("Building vector database for columns...")

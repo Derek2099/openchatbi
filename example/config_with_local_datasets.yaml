@@ -1,0 +1,102 @@
+# OpenChatBI Configuration with Local Datasets Example
+# This is a complete example showing how to configure local datasets
+
+organization: My Company
+dialect: presto
+bi_config_file: example/bi.yaml
+
+# Python Code Execution Configuration
+python_executor: local  # local, restricted_local, or docker (requires docker package)
+
+# Context management configuration
+context_config:
+  enabled: true
+  summary_trigger_tokens: 12000
+  keep_recent_messages: 20
+  max_tool_output_length: 2000
+  max_sql_result_rows: 50
+  max_code_output_lines: 50
+  enable_summarization: true
+  enable_conversation_summary: true
+  summary_max_messages: 50
+  preserve_tool_errors: true
+  preserve_recent_sql: true
+
+# Time Series Forecasting Service Configuration
+timeseries_forecasting_service_url: "http://localhost:8765"
+
+# Catalog store configuration
+catalog_store:
+  store_type: file_system
+  data_path: ./example
+
+# Data warehouse configuration
+data_warehouse_config:
+  uri: "presto://user@localhost:8080/db/default"
+  include_tables:
+    - null  # null means include all tables
+  database_name: "db.default"
+
+# ===== LOCAL DATASETS CONFIGURATION =====
+# Enable this section to load local CSV/Excel/Parquet files with pandas
+local_datasets:
+  enabled: true  # Set to true to enable local dataset loading
+  datasets:
+    # Example 1: CSV file
+    - name: "sales_data"
+      path: "./data/sales.csv"
+      description: "Sales transaction data"
+      file_type: "csv"
+      options:
+        encoding: "utf-8"
+        sep: ","
+    
+    # Example 2: Excel file
+    - name: "customer_data"
+      path: "./data/customers.xlsx"
+      description: "Customer information"
+      file_type: "excel"
+      options:
+        sheet_name: "Sheet1"
+    
+    # Example 3: Parquet file (high-performance format)
+    - name: "analytics_data"
+      path: "./data/analytics.parquet"
+      description: "Analytics metrics data"
+      file_type: "parquet"
+    
+    # Example 4: JSON file
+    - name: "config_data"
+      path: "./data/config.json"
+      description: "Configuration data"
+      file_type: "json"
+      options:
+        orient: "records"
+
+# LLM configurations
+default_llm:
+  class: langchain_openai.ChatOpenAI
+  params:
+    api_key: YOUR_API_KEY_HERE
+    model: gpt-4
+    temperature: 0.01
+    max_tokens: 8192
+
+embedding_model:
+  class: langchain_openai.OpenAIEmbeddings
+  params:
+    api_key: YOUR_API_KEY_HERE
+    model: text-embedding-3-large
+    chunk_size: 1024
+
+# Optional: separate LLM for text2sql tasks
+text2sql_llm:
+  class: langchain_openai.ChatOpenAI
+  params:
+    api_key: YOUR_API_KEY_HERE
+    model: gpt-4
+    temperature: 0.0
+    max_tokens: 8192
+
+# MCP (Model Context Protocol) server configurations
+mcp_servers: []

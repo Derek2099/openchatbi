@@ -3,7 +3,7 @@
 from langchain.tools import tool
 from pydantic import BaseModel, Field
 
-from openchatbi.code.docker_executor import DockerExecutor, check_docker_status
+# from openchatbi.code.docker_executor import DockerExecutor, check_docker_status
 from openchatbi.code.local_executor import LocalExecutor
 from openchatbi.code.restricted_local_executor import RestrictedLocalExecutor
 from openchatbi.config_loader import ConfigLoader

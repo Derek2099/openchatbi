@@ -13,7 +13,7 @@ from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, AIMessageChunk, RemoveMessage, ToolMessage
 from langchain_core.vectorstores import VectorStore
 from rank_bm25 import BM25Okapi
-from regex import regex
+import regex
 
 from openchatbi.graph_state import AgentState
 from openchatbi.text_segmenter import _segmenter
